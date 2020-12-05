@@ -8,9 +8,9 @@ import (
 	"os"
 )
 
-func processFile(filename string) int {
-
+func processFile(filename string) (int, []int) {
 	var highestSeatID int = -1
+	var seatIDs []int
 
 	file, err := os.Open(filename)
 	defer file.Close()
@@ -44,6 +44,7 @@ func processFile(filename string) int {
 			}
 		}
 		var id = maxColumn*8 + maxSeat
+		seatIDs = append(seatIDs, id)
 		if id > highestSeatID {
 			highestSeatID = id
 		}
@@ -53,7 +54,19 @@ func processFile(filename string) int {
 		log.Fatal(err)
 	}
 
-	return highestSeatID
+	return highestSeatID, seatIDs
+}
+
+func findMyID(highestSeatID int, seatIDs []int) {
+
+	freeIDs := make(map[int]bool)
+	for i := 84; i < highestSeatID; i++ {
+		freeIDs[i] = true
+	}
+	for _, id := range seatIDs {
+		delete(freeIDs, id)
+	}
+	fmt.Println(freeIDs)
 }
 
 func main() {
@@ -62,7 +75,7 @@ func main() {
 		log.Fatal("You must supply a file to process.")
 	}
 	filename := args[0]
-	highestSeatID := processFile(filename)
+	highestSeatID, seatIDs := processFile(filename)
 
-	fmt.Println("Highest seat ID: ", highestSeatID)
+	findMyID(highestSeatID, seatIDs)
 }
