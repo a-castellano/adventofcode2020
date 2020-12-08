@@ -8,7 +8,6 @@ import (
 	"os"
 	"regexp"
 	"strconv"
-	//	"strings"
 )
 
 type Bag struct {
