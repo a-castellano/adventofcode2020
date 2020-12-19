@@ -78,7 +78,7 @@ func getCurrentCubes(cubes map[string]*Cube) []string {
 func processFile(filename string) map[string]*Cube {
 
 	cubes := make(map[string]*Cube)
-	neighbors := make(map[string]*Cube)
+	//neighbors := make(map[string]*Cube)
 
 	var row int = 0
 
@@ -105,17 +105,6 @@ func processFile(filename string) map[string]*Cube {
 		row++
 	}
 
-	counter := 0
-	currentCubes := getCurrentCubes(cubes)
-	for _, stringCoordinates := range currentCubes {
-		cubes[stringCoordinates].SetNeighbors(cubes, neighbors)
-		counter++
-	}
-	currentNeighbors := getCurrentCubes(neighbors)
-	for _, stringCoordinates := range currentNeighbors {
-		neighbors[stringCoordinates].SetNeighbors(cubes, neighbors)
-	}
-
 	return cubes
 }
 
@@ -123,6 +112,16 @@ func runCicles(cubes map[string]*Cube, cicles int) {
 	for cicle := 0; cicle < cicles; cicle++ {
 		newStates := make(map[string]bool)
 		neighbors := make(map[string]*Cube)
+
+		currentCubes := getCurrentCubes(cubes)
+		for _, stringCoordinates := range currentCubes {
+			cubes[stringCoordinates].SetNeighbors(cubes, neighbors)
+		}
+		currentNeighbors := getCurrentCubes(neighbors)
+		for _, stringCoordinates := range currentNeighbors {
+			neighbors[stringCoordinates].SetNeighbors(cubes, neighbors)
+		}
+
 		for _, cube := range cubes {
 			var activeCubes int = 0
 			var cubeStringCoordinates = StringCoordinates(cube.X, cube.Y, cube.Z)
@@ -156,11 +155,24 @@ func runCicles(cubes map[string]*Cube, cicles int) {
 		for cubeStringCoordinates, cube := range cubes {
 			cube.Active = newStates[cubeStringCoordinates]
 		}
-		currentNeighbors := getCurrentCubes(neighbors)
-		for _, stringCoordinates := range currentNeighbors {
-			neighbors[stringCoordinates].SetNeighbors(cubes, neighbors)
+
+		//Clean inactive cubes
+
+		// First - clean all neighbors
+
+		for _, cube := range cubes {
+			if cube.Active {
+				for neighborCounter, _ := range cube.Neighbors {
+					cube.Neighbors[neighborCounter] = nil
+				}
+			}
 		}
 
+		for stringCoordinates, newState := range newStates {
+			if !newState {
+				delete(cubes, stringCoordinates)
+			}
+		}
 	}
 }
 
