@@ -108,10 +108,11 @@ func processFile(filename string) map[string]*Cube {
 	return cubes
 }
 
-func runCicles(cubes map[string]*Cube, cicles int) {
+func runCicles(cubes map[string]*Cube, cicles int) map[string]*Cube {
 	for cicle := 0; cicle < cicles; cicle++ {
 		newStates := make(map[string]bool)
 		neighbors := make(map[string]*Cube)
+		cubesForNextCicle := make(map[string]*Cube)
 
 		currentCubes := getCurrentCubes(cubes)
 		for _, stringCoordinates := range currentCubes {
@@ -169,11 +170,13 @@ func runCicles(cubes map[string]*Cube, cicles int) {
 		}
 
 		for stringCoordinates, newState := range newStates {
-			if !newState {
-				delete(cubes, stringCoordinates)
+			if newState {
+				cubesForNextCicle[stringCoordinates] = cubes[stringCoordinates]
 			}
 		}
+		cubes = cubesForNextCicle
 	}
+	return cubes
 }
 
 func countActive(cubes map[string]*Cube) int {
@@ -194,6 +197,6 @@ func main() {
 	filename := args[0]
 
 	cubes := processFile(filename)
-	runCicles(cubes, 6)
+	cubes = runCicles(cubes, 6)
 	fmt.Println("Active Cubes:", countActive(cubes))
 }
