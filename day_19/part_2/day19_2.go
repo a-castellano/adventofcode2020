@@ -22,13 +22,24 @@ func expandRule(rules map[int]string, expandedRules map[int]bool, ruleId int) st
 		} else {
 			splitedString := strings.Split(rules[ruleId], " ")
 			var newString string
-			for _, id := range splitedString {
+			for position, id := range splitedString {
 				// Check if it is an actual id
+
 				if id[0] >= '0' && id[0] <= '9' {
 
 					//expand Rule
 					idInt, _ := strconv.Atoi(id)
-					newString = fmt.Sprintf("%s%s", newString, expandRule(rules, expandedRules, idInt))
+					if idInt == ruleId && position == len(splitedString)-1 { //case 8
+						newString = fmt.Sprintf("(%s)+", newString)
+					} else if idInt == ruleId && position == len(splitedString)-2 { //case 11
+						nextidInt, _ := strconv.Atoi(splitedString[position+1])
+						previdInt, _ := strconv.Atoi(splitedString[position-1])
+						newString = fmt.Sprintf("(%s){_COUNTER_}(%s){_COUNTER_}", expandRule(rules, expandedRules, previdInt), expandRule(rules, expandedRules, nextidInt))
+						orFound = false
+						break
+					} else {
+						newString = fmt.Sprintf("%s%s", newString, expandRule(rules, expandedRules, idInt))
+					}
 				} else if id[0] == '|' {
 					orFound = true
 					newString = fmt.Sprintf("(%s|", newString)
@@ -83,17 +94,22 @@ func processFile(filename string) (map[int]string, []string) {
 }
 
 func validateCandidates(rules map[int]string, candidates []string, ruleId int) int {
-	var validCandidates int = 0
 
-	regex := fmt.Sprintf("^%s$", rules[ruleId])
-	ruleRe := regexp.MustCompile(regex)
-	for _, candidate := range candidates {
-		match := ruleRe.FindAllStringSubmatch(candidate, -1)
-		if len(match) == 1 {
-			validCandidates++
+	validCandidates := make(map[string]bool)
+
+	for counter := 1; counter < 20; counter++ {
+		counterRegex := strings.ReplaceAll(rules[ruleId], "_COUNTER_", strconv.Itoa(counter))
+		regex := fmt.Sprintf("^%s$", counterRegex)
+		ruleRe := regexp.MustCompile(regex)
+
+		for _, candidate := range candidates {
+			match := ruleRe.FindAllStringSubmatch(candidate, -1)
+			if len(match) == 1 {
+				validCandidates[candidate] = true
+			}
 		}
 	}
-	return validCandidates
+	return len(validCandidates)
 }
 
 func main() {
@@ -104,6 +120,5 @@ func main() {
 	filename := args[0]
 
 	rules, candidates := processFile(filename)
-
 	fmt.Println("Valid candidates:", validateCandidates(rules, candidates, 0))
 }
