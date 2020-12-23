@@ -38,17 +38,14 @@ func getBorders(image [][]rune) Borders {
 	borders.S = string(image[len(image)-1])
 
 	for i := 0; i < len(image); i++ {
-		e = append(e, image[i][0])
+		w = append(w, image[i][0])
 	}
 	for i := 0; i < len(image); i++ {
-		w = append(w, image[i][len(image[i])-1])
+		e = append(e, image[i][len(image[i])-1])
 	}
 
 	borders.E = string(e)
 	borders.W = string(w)
-
-	fmt.Println(borders)
-
 	return borders
 }
 
@@ -155,31 +152,33 @@ func processFile(filename string) (map[int]Tile, [][]int) {
 	return tiles, tilesPositions
 }
 
+func showTile(rotation [][]rune) {
+	for _, row := range rotation {
+		for _, column := range row {
+			fmt.Printf("%c", column)
+		}
+		fmt.Print("\n")
+	}
+	fmt.Print("\n")
+}
+
 func showTiles(tiles map[int]Tile) {
 	for _, tile := range tiles {
 		fmt.Println("Tile: ", tile.ID)
 		for _, rotation := range tile.Rotations {
-			for _, row := range rotation {
-				for _, column := range row {
-					fmt.Printf("%c", column)
-				}
-				fmt.Print("\n")
-			}
-			fmt.Print("\n")
+			showTile(rotation)
 		}
-		fmt.Println(tile.RotationBorders)
 	}
 }
 
-func findEdges(tiles map[int]Tile, tilesPositions [][]int) {
+func findEdges(tiles map[int]Tile, tilesPositions [][]int) int {
 
-	edgeTiles := make(map[int]bool)
+	edgeCandidates := make(map[int][]int)
+	var result int = 1
 
-	//find upLeft tile
+	//find candidates
 	for tileId, tile := range tiles {
-		var foundMatch bool = false
-		fmt.Println("Check ", tileId)
-		if _, ok := edgeTiles[tileId]; !ok {
+		if _, ok := edgeCandidates[tileId]; !ok {
 			for rotation, _ := range tile.Rotations {
 				var matches int = 0
 				for candidateTileId, candidateTile := range tiles {
@@ -190,22 +189,21 @@ func findEdges(tiles map[int]Tile, tilesPositions [][]int) {
 							}
 						}
 					}
-					if foundMatch {
-						break
+				}
+				if matches == 0 {
+					if _, ok := edgeCandidates[tileId]; !ok {
+						edgeCandidates[tileId] = make([]int, 0)
 					}
+					edgeCandidates[tileId] = append(edgeCandidates[tileId], rotation)
 				}
-				if foundMatch {
-
-					break
-				}
-				fmt.Println(tileId, matches)
 			}
-
-		}
-		if !foundMatch {
-			fmt.Println(tileId, "is edge")
 		}
 	}
+
+	for tileId, _ := range edgeCandidates {
+		result *= tileId
+	}
+	return result
 }
 
 func main() {
@@ -217,8 +215,6 @@ func main() {
 
 	tiles, tilesPositions := processFile(filename)
 
-	showTiles(tiles)
-	fmt.Println(len(tiles))
-	fmt.Println(tilesPositions)
-	findEdges(tiles, tilesPositions)
+	result := findEdges(tiles, tilesPositions)
+	fmt.Println("Result:", result)
 }
